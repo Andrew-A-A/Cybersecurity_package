@@ -9,18 +9,46 @@ namespace SecurityLibrary
 
         public string Encrypt(string plainText, int key)
         {
+            key = key % 25;
             string answer="";
             foreach (char character in plainText)
             {
-                char c =(char) ((int)character + key);
+                int shift = key;
+                char c;
+                if ((int)character + key > (int)'z')
+                {
+                    shift = key - ((int)'z' - (int)character)-1;
+                    c= (char)((int)'a' + shift);
+                }
+                else
+                {
+                    c = (char)((int)character + shift);
+                }
                 answer += c;
             }
-            return answer;
+            return answer.ToUpper();
         }
 
         public string Decrypt(string cipherText, int key)
         {
-            throw new NotImplementedException();
+            key = key % 25; 
+            string answer = "";
+            foreach (char character in cipherText.ToLower())
+            {
+                int shift = key;
+                char c;
+                if ((int)character - key < (int)'a')
+                {
+                    shift = key - ((int)character - (int)'a') - 1;
+                    c = (char)((int)'z' - shift);
+                }
+                else
+                {
+                    c = (char)((int)character - shift);
+                }
+                answer += c;
+            }
+            return answer.ToLower();
         }
 
         public int Analyse(string plainText, string cipherText)
