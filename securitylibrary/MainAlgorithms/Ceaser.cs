@@ -53,7 +53,13 @@ namespace SecurityLibrary
 
         public int Analyse(string plainText, string cipherText)
         {
-            throw new NotImplementedException();
+            cipherText = cipherText.ToLower();
+            int key= ((int)cipherText[0]-(int)plainText[0] ) % 25;
+            if (key < 0)
+            {
+                key+=26;
+            }
+            return key;
         }
     }
 }
