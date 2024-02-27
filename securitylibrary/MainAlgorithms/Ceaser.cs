@@ -9,8 +9,13 @@ namespace SecurityLibrary
 
         public string Encrypt(string plainText, int key)
         {
-            throw new NotImplementedException();
-
+            string answer="";
+            foreach (char character in plainText)
+            {
+                char c =(char) ((int)character + key);
+                answer += c;
+            }
+            return answer;
         }
 
         public string Decrypt(string cipherText, int key)
