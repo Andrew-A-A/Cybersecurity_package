@@ -16,13 +16,40 @@ namespace SecurityLibrary
 
         public string Decrypt(string cipherText, string key)
         {
-            throw new NotImplementedException();
+            // throw new NotImplementedException();
+            string alpha_letters = "abcdefghijklmnopqrstuvwxyz";
+            string decryptedResult = "";
+            cipherText = cipherText.ToLower();
+            for (int i = 0; i < cipherText.Length; i++)
+            {
+                for (int j = 0; j < key.Length; j++)
+                {
+                    if (cipherText[i] == key[j])
+                    {
+                        decryptedResult += alpha_letters[j];
+                    }
+                }
+            }
+            return decryptedResult;
 
         }
 
         public string Encrypt(string plainText, string key)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            string alpha_letters = "abcdefghijklmnopqrstuvwxyz";
+            string encryptedResult = "";
+            for (int i = 0; i < plainText.Length; i++)
+            {
+                for (int j = 0; j < alpha_letters.Length; j++)
+                {
+                    if (plainText[i] == alpha_letters[j])
+                    {
+                        encryptedResult += key[j];
+                    }
+                }
+            }
+            return encryptedResult;
         }
 
 
