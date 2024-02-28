@@ -95,24 +95,23 @@ namespace SecurityLibrary
                     decryptedText += matrix5x5[FirstPosX, SecPosY];
                     decryptedText += matrix5x5[SecPosX, FirstPosY];
                 }
-
             }
 
+            //loop on the decryptedText to check the X conditions
+            string dec = "";
             for (int i = 0; i < decryptedText.Length; i++)
             {
-                if (i < decryptedText.Length - 3)
+                if (i!=0 && i!=decryptedText.Length-1 && decryptedText[i - 1] == decryptedText[i + 1] && decryptedText[i] == 'x' && (i - 1) % 2 == 0)
                 {
-                    if (decryptedText[i] == decryptedText[i + 2] && decryptedText[i + 1] == 'x')
-                    {
-                        decryptedText = decryptedText.Remove(i + 1, 1);
-                    }
+                    continue;
                 }
-                if (decryptedText[decryptedText.Length - 1] == 'x')
+                if (i== decryptedText.Length - 1 && decryptedText[decryptedText.Length - 1] == 'x')
                 {
-                    decryptedText = decryptedText.Remove(decryptedText.Length - 1, 1);
+                    break;
                 }
+                dec += decryptedText[i];
             }
-            return decryptedText.ToLower();
+            return dec.ToLower();
         }
 
         public string Encrypt(string plainText, string key)
@@ -213,6 +212,8 @@ namespace SecurityLibrary
             }
             return encriptedText.ToUpper();
         }
+
+        //check if specific char found in a 2d matrix
         public bool FoundChar(char Text, char[,] Ref)
         {
             for (int i = 0; i < 5; i++)
