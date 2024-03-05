@@ -13,7 +13,55 @@ namespace SecurityLibrary
         public List<int> Analyse(List<int> plainText, List<int> cipherText)
         {
 
-            throw new NotImplementedException();
+            //k = C x P-1
+            List<int> key = new List<int>();
+            int plainDeterm = getMatrixDeterm2d(plainText) % 26;
+         
+            if (plainDeterm < 0)
+            {
+                plainDeterm += 26;
+            }
+
+
+            int b = 0;
+            for (int i = 0; i < 27; i++)
+            {
+                if ((i * plainDeterm) % 26 == 1)
+                {
+                    b = i;
+                    break;
+                }
+            }
+
+            if (plainDeterm == 0 ||b==0)
+            {
+                throw new InvalidAnlysisException();
+            }
+
+            List<int> invPlain = getMatrixInverse2d(plainText, b);
+            for (int i = 0; i < invPlain.Count(); i++)
+            {
+                invPlain[i] = invPlain[i] % 26;
+                while (invPlain[i] < 0)
+                {
+                    invPlain[i] += 26;
+                }
+            }
+
+
+            key = matMult(invPlain, cipherText);
+
+            for (int i = 0; i < key.Count(); i++)
+            {
+                key[i] = key[i] % 26;
+
+                if (key[i] < 0)
+                {
+                    key[i] += 26;
+                }
+            }
+           // key = getMatrixTranspose3d(key);
+            return key;
         }
         public string Analyse(string plainText, string cipherText)
         {
@@ -122,8 +170,54 @@ namespace SecurityLibrary
 
         public List<int> Analyse3By3Key(List<int> plain3, List<int> cipher3)
         {
+            //k = C x P-1
+            List<int> key=new List<int>();
+            int plainDeterm=getMatrixDeterm3d(plain3)%26;
+            if (plainDeterm == 0)
+            {
+                throw new InvalidAnlysisException();
+            }
+            if (plainDeterm < 0)
+            {
+                plainDeterm += 26;
+            }
+            
+        
+            int b = 0;
+            for (int i = 0; i < 27; i++)
+            {
+                if ((i * plainDeterm) % 26 == 1)
+                {
+                    b = i;
+                    break;
+                }
+            }
+            List<int> invPlain = getMatrixInverse3d(plain3,b);
+            for (int i = 0; i < invPlain.Count(); i++)
+            {
+                invPlain[i] = invPlain[i] % 26;
+                while (invPlain[i] < 0)
+                {
+                    invPlain[i] += 26;
+                }
+            }
 
-            throw new NotImplementedException();
+
+         
+
+           key =matMult(invPlain,cipher3);
+
+            for(int i=0; i<key.Count(); i++)
+            {
+                key[i]=key[i]%26;
+
+                if (key[i] < 0)
+                {
+                    key[i] += 26;
+                }
+            }
+            key = getMatrixTranspose3d(key);
+            return key;
         }
 
         public string Analyse3By3Key(string plain3, string cipher3)
@@ -194,6 +288,57 @@ namespace SecurityLibrary
             transpose.Add((determInverse * inverse[5]) % 26);
             transpose.Add((determInverse * inverse[8]) % 26);
             return transpose;
+        }
+
+
+        public static List<int> getMatrixTranspose3d(List<int> matrix)
+        {
+            // 3d Matrix :  0 1 2                     0 3 6
+            //              3 4 5     Transpose--->   1 4 7
+            //              6 7 8                     2 5 8
+        
+            List<int> transpose = new List<int>();
+            transpose.Add((matrix[0]));
+            transpose.Add((matrix[3]));
+            transpose.Add((matrix[6]));
+            transpose.Add((matrix[1]));
+            transpose.Add((matrix[4]));
+            transpose.Add((matrix[7]));
+            transpose.Add((matrix[2]));
+            transpose.Add((matrix[5]));
+            transpose.Add((matrix[8]));
+            return transpose;
+        }
+
+        public static List<int> matMult(List<int> matrix1, List<int> matrix2)
+        {
+            List<int> val = new List<int>();
+
+            // 2x2 matrix
+            if (matrix1.Count() == 4)
+            {
+                val.Add(matrix1[0] * matrix2[0] + matrix1[1] * matrix2[2]);
+                val.Add((matrix1[0] * matrix2[1] + matrix1[1] * matrix2[3]));
+                val.Add((matrix1[2] * matrix2[0] + matrix1[3] * matrix2[2]));
+                val.Add((matrix1[2] * matrix2[1] + matrix1[3] * matrix2[3]));
+            }
+            // 3x3 matrix
+            else
+            {
+                val.Add(matrix1[0] * matrix2[0] + matrix1[1] * matrix2[3] + matrix1[2] * matrix2[6]);
+                val.Add(matrix1[0] * matrix2[1] + matrix1[1] * matrix2[4] + matrix1[2] * matrix2[7]);
+                val.Add(matrix1[0] * matrix2[2] + matrix1[1] * matrix2[5] + matrix1[2] * matrix2[8]);
+
+                val.Add(matrix1[3] * matrix2[0] + matrix1[4] * matrix2[3] + matrix1[5] * matrix2[6]);
+                val.Add(matrix1[3] * matrix2[1] + matrix1[4] * matrix2[4] + matrix1[5] * matrix2[7]);
+                val.Add(matrix1[3] * matrix2[2] + matrix1[4] * matrix2[5] + matrix1[5] * matrix2[8]);
+
+                val.Add(matrix1[6] * matrix2[0] + matrix1[7] * matrix2[3] + matrix1[8] * matrix2[6]);
+                val.Add(matrix1[6] * matrix2[1] + matrix1[7] * matrix2[4] + matrix1[8] * matrix2[7]);
+                val.Add(matrix1[6] * matrix2[2] + matrix1[7] * matrix2[5] + matrix1[8] * matrix2[8]);
+
+            }
+            return val;
         }
 
     }
