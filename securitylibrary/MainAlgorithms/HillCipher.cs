@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,57 +13,18 @@ namespace SecurityLibrary
 
         public List<int> Analyse(List<int> plainText, List<int> cipherText)
         {
+            List<int> newPlain = new List<int>();
+            List<int> newCipher = new List<int>();
+            int determinant = 0;
+            bool found = FindDeterminantAndInvert(plainText, cipherText, ref newPlain, ref newCipher, ref determinant);
 
-            //k = C x P-1
-            List<int> key = new List<int>();
-            int plainDeterm = getMatrixDeterm2d(plainText) % 26;
-         
-            if (plainDeterm < 0)
-            {
-                plainDeterm += 26;
-            }
-
-
-            int b = 0;
-            for (int i = 0; i < 27; i++)
-            {
-                if ((i * plainDeterm) % 26 == 1)
-                {
-                    b = i;
-                    break;
-                }
-            }
-
-            if (plainDeterm == 0 ||b==0)
-            {
+            if (!found)
                 throw new InvalidAnlysisException();
-            }
 
-            List<int> invPlain = getMatrixInverse2d(plainText, b);
-            for (int i = 0; i < invPlain.Count(); i++)
-            {
-                invPlain[i] = invPlain[i] % 26;
-                while (invPlain[i] < 0)
-                {
-                    invPlain[i] += 26;
-                }
-            }
-
-
-            key = matMult(invPlain, cipherText);
-
-            for (int i = 0; i < key.Count(); i++)
-            {
-                key[i] = key[i] % 26;
-
-                if (key[i] < 0)
-                {
-                    key[i] += 26;
-                }
-            }
-           // key = getMatrixTranspose3d(key);
-            return key;
+            List<int> invertedPlain = InvertMatrix(newPlain, determinant);
+            return MultiplyMatrices(newCipher, invertedPlain, 2);
         }
+
         public string Analyse(string plainText, string cipherText)
         {
             throw new NotImplementedException();
@@ -76,7 +38,7 @@ namespace SecurityLibrary
             int determ ;
             if (key.Count %2==0)
             {
-                determ = getMatrixDeterm2d(key)%26;
+                determ = MatrixDeterm2d(key)%26;
                 while (determ<0)
                 {
                     determ += 26;
@@ -95,11 +57,11 @@ namespace SecurityLibrary
                 {
                     throw new InvalidAnlysisException();
                 }
-                keyInverse = getMatrixInverse2d(key, b);   
+                keyInverse = MatrixInverse2d(key, b);   
             }
             else
             {
-                determ = getMatrixDeterm3d(key)%26;
+                determ = MatrixDeterm3d(key)%26;
                 while (determ < 0)
                 {
                     determ += 26;
@@ -119,7 +81,7 @@ namespace SecurityLibrary
                     throw new InvalidAnlysisException();
                 }
                 //3- find K inverse
-                keyInverse = getMatrixInverse3d(key, b);
+                keyInverse = MatrixInverse3d(key, b);
             }
             for (int i = 0; i < keyInverse.Count; i++)
             {
@@ -172,7 +134,7 @@ namespace SecurityLibrary
         {
             //k = C x P-1
             List<int> key=new List<int>();
-            int plainDeterm=getMatrixDeterm3d(plain3)%26;
+            int plainDeterm=MatrixDeterm3d(plain3)%26;
             if (plainDeterm == 0)
             {
                 throw new InvalidAnlysisException();
@@ -192,7 +154,7 @@ namespace SecurityLibrary
                     break;
                 }
             }
-            List<int> invPlain = getMatrixInverse3d(plain3,b);
+            List<int> invPlain = MatrixInverse3d(plain3,b);
             for (int i = 0; i < invPlain.Count(); i++)
             {
                 invPlain[i] = invPlain[i] % 26;
@@ -205,7 +167,7 @@ namespace SecurityLibrary
 
          
 
-           key =matMult(invPlain,cipher3);
+           key =MatrixMultiplication(invPlain,cipher3);
 
             for(int i=0; i<key.Count(); i++)
             {
@@ -216,7 +178,7 @@ namespace SecurityLibrary
                     key[i] += 26;
                 }
             }
-            key = getMatrixTranspose3d(key);
+            key = MatrixTranspose3d(key);
             return key;
         }
 
@@ -225,7 +187,7 @@ namespace SecurityLibrary
             throw new NotImplementedException();
         }
 
-        public static int getMatrixDeterm2d(List<int>matrix)
+        public static int MatrixDeterm2d(List<int>matrix)
         {
             // 2d Matrix :  a b  
             //              c d
@@ -233,7 +195,7 @@ namespace SecurityLibrary
             int bc = matrix[1] * matrix[2];
             return ad - bc;
         }
-        public static List<int> getMatrixInverse2d(List<int> matrix,int determ)
+        public static List<int> MatrixInverse2d(List<int> matrix,int determ)
         {
             List<int> inverse = new List<int>();
             int a = matrix[0];
@@ -246,7 +208,7 @@ namespace SecurityLibrary
             inverse.Add((determ * a) % 26);
             return inverse;
         }
-        public static int getMatrixDeterm3d(List<int> matrix)
+        public static int MatrixDeterm3d(List<int> matrix)
         {
             // 3d Matrix :  a b c
             //              d e f
@@ -262,7 +224,7 @@ namespace SecurityLibrary
             int eg = matrix[4] * matrix[6];
             return (a * (ei - fh) - b * (di - fg) + c * (dh - eg));
         }
-        public static List<int> getMatrixInverse3d(List<int> matrix, int determInverse)
+        public static List<int> MatrixInverse3d(List<int> matrix, int determInverse)
         {
             // 3d Matrix :  0 1 2                     0 3 6
             //              3 4 5     Transpose--->   1 4 7
@@ -290,8 +252,7 @@ namespace SecurityLibrary
             return transpose;
         }
 
-
-        public static List<int> getMatrixTranspose3d(List<int> matrix)
+        public static List<int> MatrixTranspose3d(List<int> matrix)
         {
             // 3d Matrix :  0 1 2                     0 3 6
             //              3 4 5     Transpose--->   1 4 7
@@ -310,7 +271,7 @@ namespace SecurityLibrary
             return transpose;
         }
 
-        public static List<int> matMult(List<int> matrix1, List<int> matrix2)
+        public static List<int> MatrixMultiplication(List<int> matrix1, List<int> matrix2)
         {
             List<int> val = new List<int>();
 
@@ -341,6 +302,105 @@ namespace SecurityLibrary
             return val;
         }
 
+        private int GCD(int a, int b)
+        {
+            if (b == 0)
+                return a;
+
+            if (a == 0)
+                return b;
+
+            if (a == b)
+                return a;
+
+            if (a > b)
+                return GCD(a - b, b);
+
+            return GCD(a, b - a);
+        }
+
+        private bool FindDeterminantAndInvert(List<int> plainText, List<int> cipherText, ref List<int> newPlain, ref List<int> newCipher, ref int determinant)
+        {
+            for (int i = 0; i < plainText.Count; i += 2)
+            {
+                for (int j = 0; j < plainText.Count; j += 2)
+                {
+                    if (j == i)
+                        continue;
+
+                    determinant = (plainText[i] * plainText[j + 1] - plainText[i + 1] * plainText[j]) % 26;
+                    determinant = (determinant < 0) ? determinant + 26 : determinant;
+
+                    if (GCD(determinant, 26) == 1 && determinant != 0)
+                    {
+                        newPlain.AddRange(new[] { plainText[i], plainText[j], plainText[i + 1], plainText[j + 1] });
+                        newCipher.AddRange(new[] { cipherText[i], cipherText[j], cipherText[i + 1], cipherText[j + 1] });
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private List<int> InvertMatrix(List<int> matrix, int determinant)
+        {
+            List<int> invertedMatrix = new List<int>();
+            int b = ModInverse(determinant, 26);
+
+            invertedMatrix.Add(matrix[3]);
+            invertedMatrix.Add(-1 * matrix[1]);
+            invertedMatrix.Add(-1 * matrix[2]);
+            invertedMatrix.Add(matrix[0]);
+
+            for (int i = 0; i < invertedMatrix.Count; i++)
+            {
+                while (invertedMatrix[i] < 0)
+                    invertedMatrix[i] = invertedMatrix[i] + 26;
+                invertedMatrix[i] = (invertedMatrix[i] * b) % 26;
+            }
+            return invertedMatrix;
+        }
+
+        private List<int> MultiplyMatrices(List<int> a, List<int> b, int M)
+        {
+            List<int> result = new List<int>();
+            for (int i = 0; i < M; i++)
+            {
+                int index1 = i * M;
+                for (int j = 0; j < M; j++)
+                {
+                    int index2 = j;
+                    int res = 0;
+                    for (int k = 0; k < M; k++)
+                    {
+                        res += a[index1 + k] * b[index2];
+                        index2 += M;
+                    }
+                    result.Add(res % 26);
+                }
+            }
+            return result;
+        }
+
+        private int ModInverse(int a, int Mod)
+        {
+            int M = Mod, K = 0, d = 1;
+            while (a > 0)
+            {
+                int t = M / a, x = a;
+                a = M % x;
+                M = x;
+                x = d;
+                d = K - t * x;
+                K = x;
+            }
+            K %= Mod;
+            if (K < 0)
+                K = (K + Mod) % Mod;
+            return K;
+        }
+
     }
+
 }
 
