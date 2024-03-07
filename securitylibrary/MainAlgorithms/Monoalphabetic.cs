@@ -11,7 +11,6 @@ namespace SecurityLibrary
     {
         private const string alphabets = "abcdefghijklmnopqrstuvwxyz";
 
-
         public string Analyse(string plainText, string cipherText)
         {
             //throw new NotImplementedException();
@@ -48,13 +47,11 @@ namespace SecurityLibrary
                 else
                     res += key[i];
 
-
             return res;
         }
 
         public string Decrypt(string cipherText, string key)
         {
-            // throw new NotImplementedException();
             string decryptedResult = "";
             cipherText = cipherText.ToLower();
             for (int i = 0; i < cipherText.Length; i++)
@@ -68,12 +65,10 @@ namespace SecurityLibrary
                 }
             }
             return decryptedResult;
-
         }
 
         public string Encrypt(string plainText, string key)
         {
-            //throw new NotImplementedException();
             string encryptedResult = "";
             for (int i = 0; i < plainText.Length; i++)
             {
@@ -123,8 +118,6 @@ namespace SecurityLibrary
 
         public string AnalyseUsingCharFrequency(string cipher)
         {
-
-            //throw new NotImplementedException();
             List<char> frequencyInformation = new List<char>() { 'e', 't', 'a', 'o', 'i', 'n', 's', 'r', 'h', 'l', 'd', 'c', 'u', 'm', 'f', 'p', 'g', 'w', 'y', 'b', 'v', 'k', 'x', 'j', 'q', 'z' };
 
             cipher = cipher.ToLower();
@@ -153,7 +146,6 @@ namespace SecurityLibrary
                 key += KeyMap[alphabets[i]];
 
             return Decrypt(cipher, key);
-
         }
 
     }
