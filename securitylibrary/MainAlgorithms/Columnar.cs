@@ -15,8 +15,46 @@ namespace SecurityLibrary
 
         public string Decrypt(string cipherText, List<int> key)
         {
-            throw new NotImplementedException();
+            int columns = key.Count();
+            int rows = (cipherText.Length / columns) + 1;
 
+            char[,] matrix = new char[rows, columns];
+
+            cipherText = cipherText.ToLower();
+
+            int cipher_index = 0;
+
+            // fillng the free cells before the matrix so the algorithm can fill the cipher correct
+            int ignore = rows * columns - cipherText.Length;
+            for (int i = 0; i < ignore; i++)
+                matrix[rows - 1, columns - i - 1] = 'x';
+
+
+            for (int col = 0; col < columns; col++)
+                for (int row = 0; row < rows; row++)
+                {
+                    int index = key.IndexOf(col + 1);
+                    if (matrix[row, index] != 'x')
+                        if (cipher_index >= cipherText.Length)
+                            matrix[row, index] = 'x';
+                        else
+                        {
+                            matrix[row, index] += cipherText[cipher_index];
+                            cipher_index++;
+                        }
+
+
+                }
+
+            string plainText = "";
+
+            for (int i = 0; i < rows; i++)
+                for (int j = 0; j < columns; j++)
+                    if (matrix[i, j] != 'x')
+                        plainText += matrix[i, j];
+
+
+            return plainText;
         }
 
         public string Encrypt(string plainText, List<int> key)
@@ -43,7 +81,7 @@ namespace SecurityLibrary
 
             string cipherText = "";
 
-            for (int col = 0; col < key.Count(); col++)
+            for (int col = 0; col < columns; col++)
             {
                 int index = key.IndexOf(col + 1);
                 for (int row = 0; row < rows; row++)
