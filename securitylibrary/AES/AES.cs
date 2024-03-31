@@ -62,7 +62,43 @@ namespace SecurityLibrary.AES
 
         public override string Decrypt(string cipherText, string key)
         {
-            throw new NotImplementedException();
+            byte[,] state = new byte[4, 4];
+
+            byte[] cipherBytes = new byte[cipherText.Length / 2 - 1];
+            for (int i = 0; i < cipherBytes.Length; i++)
+            {
+                cipherBytes[i] = Convert.ToByte(cipherText.Substring(2 * (i + 1), 2), 16);
+            }
+            byte[,] expandedKey = KeyExpansion(key);
+            int counter = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    state[i, j] = cipherBytes[counter];
+                    counter++;
+                }
+            }
+            int round = 10;
+            byte[,] usedKeyPart = usedPartExpandedKey(expandedKey, round);
+            //initial addRoundKey
+            state = AddRoundKey(state, usedKeyPart);
+            round--;
+            //Repeating for 9 times
+            for (; round > 0; round--)
+            {
+                //state = shiftrows
+                state = SubBytes(state, false);
+                usedKeyPart = usedPartExpandedKey(expandedKey, round);
+                state = AddRoundKey(state, usedKeyPart);
+                //state = mixcol
+            }
+            //Last round
+            //state = shiftrows
+            state = SubBytes(state, false);
+            usedKeyPart = usedPartExpandedKey(expandedKey, round);
+            state = AddRoundKey(state, usedKeyPart);
+            return state.ToString();
         }
 
         public override string Encrypt(string plainText, string key)
@@ -86,9 +122,23 @@ namespace SecurityLibrary.AES
             }
             int round=0;
             byte[,] usedKeyPart = usedPartExpandedKey(expandedKey, round);
+            //initial Add Round Key
             state = AddRoundKey(state, usedKeyPart);
-            state = SubBytes(state, true);
             round++;
+            //Repeat for 9 times
+            for (; round < 10; round++)
+            {
+                state = SubBytes(state, true);
+                //state = shiftrows
+                //state = mixcols
+                usedKeyPart = usedPartExpandedKey(expandedKey, round);
+                state = AddRoundKey(state, usedKeyPart);
+            }
+            //Last Round
+            state = SubBytes(state, true);
+            //state = shiftrows
+            usedKeyPart = usedPartExpandedKey(expandedKey, round);
+            state = AddRoundKey(state,usedKeyPart);
             return state.ToString();
         }
 
