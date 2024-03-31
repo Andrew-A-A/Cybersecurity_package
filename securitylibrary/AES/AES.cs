@@ -49,15 +49,16 @@ namespace SecurityLibrary.AES
         }
 
 
-        public static byte[,] KeyExpansion(string[] stringKey)
+        public static byte[,] KeyExpansion(string originalKey)
         {
-            // Convert hex strings to bytes
-            byte[] originalKey = new byte[stringKey.Length];
-            for (int i = 0; i < originalKey.Length; i++)
+            // Remove "0x" prefix and convert hex string to byte array
+            byte[] keyBytes = new byte[originalKey.Length / 2 - 1];
+            for (int i = 0; i < keyBytes.Length; i++)
             {
-                originalKey[i] = Convert.ToByte(stringKey[i], 16);
+                keyBytes[i] = Convert.ToByte(originalKey.Substring(2 * (i + 1), 2), 16);
             }
-            int Nk = originalKey.Length / 4; // Number of 32-bit words in the key
+
+            int Nk = keyBytes.Length / 4; // Number of 32-bit words in the key
             int Nb = 4; // Number of columns in state (always 4 for AES)
             int Nr = Nk + 6; // Number of rounds
             int expandedKeySize = 4 * Nb * (Nr + 1); // Size of expanded key in bytes
@@ -67,10 +68,10 @@ namespace SecurityLibrary.AES
             // Copy original key into the first Nb columns of the expanded key
             for (int i = 0; i < Nk; i++)
             {
-                expandedKey[i, 0] = originalKey[i * 4];
-                expandedKey[i, 1] = originalKey[i * 4 + 1];
-                expandedKey[i, 2] = originalKey[i * 4 + 2];
-                expandedKey[i, 3] = originalKey[i * 4 + 3];
+                expandedKey[i, 0] = keyBytes[i * 4];
+                expandedKey[i, 1] = keyBytes[i * 4 + 1];
+                expandedKey[i, 2] = keyBytes[i * 4 + 2];
+                expandedKey[i, 3] = keyBytes[i * 4 + 3];
             }
 
             for (int col = Nk; col < (Nb * (Nr + 1)); col++)
