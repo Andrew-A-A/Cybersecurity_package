@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -45,7 +46,28 @@ namespace SecurityLibrary.AES
 
         public override string Encrypt(string plainText, string key)
         {
-            throw new NotImplementedException();
+            byte[,] state = new byte[4,4];
+
+            byte[] plainBytes = new byte[plainText.Length / 2 - 1];
+            for (int i = 0; i < plainBytes.Length; i++)
+            {
+                plainBytes[i] = Convert.ToByte(plainText.Substring(2 * (i + 1), 2), 16);
+            }
+            byte[,] expandedKey = KeyExpansion(key);
+            int counter = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                for (int  j= 0; j < 4; j++)
+                {
+                    state[i, j]=plainBytes[counter] ;
+                    counter++;
+                }
+            }
+            int round=0;
+            byte[,] usedKeyPart = usedPartExpandedKey(expandedKey, round);
+            state = AddRoundKey(state, usedKeyPart);
+            round++;
+            return state.ToString();
         }
 
 
@@ -137,6 +159,33 @@ namespace SecurityLibrary.AES
                 Console.WriteLine();
             }
         }
+
+        //determine which part of the expanded key will be used in the round
+        public static byte[,] usedPartExpandedKey(byte[,] expandedKey,int index)
+        {
+            byte[,]newKey= new byte[4,4];
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    newKey[i, j] = expandedKey[i, j + (index*4)];
+                }
+            }
+            return newKey;
+        }
+        public static byte[,] AddRoundKey(byte[,]plainText, byte[,] expandedKey)
+        {
+            byte[,] newState = new byte[4, 4];
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    newState[i,j] = (byte)(plainText[i, j] ^ expandedKey[i, j]);
+                }
+            }
+            return newState;
+        }
+
     }
 
 
