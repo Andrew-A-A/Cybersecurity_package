@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -131,6 +132,17 @@ namespace SecurityLibrary.AES
                 state = SubBytes(state, true);
                 //state = shiftrows
                 //state = mixcols
+                state = MixColumns(state);
+
+                //convert the mix column matrix to hex for testing
+                /*string[,] mcState = new string[4, 4];
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
+                        mcState[i,j]= Convert.ToString(state[i,j], 16);
+                    }
+                }*/
                 usedKeyPart = usedPartExpandedKey(expandedKey, round);
                 state = AddRoundKey(state, usedKeyPart);
             }
@@ -304,6 +316,69 @@ namespace SecurityLibrary.AES
             }
             return updatedState;
         }
+
+        public static byte[,] MixColumns(byte[,] state)
+        {
+            byte[,] newState = new byte[4, 4];
+            byte[,] matrix = new byte[4, 4]
+            {
+                { 2, 3, 1, 1}, 
+                { 1, 2, 3, 1},
+                { 1, 1, 2, 3},
+                { 3, 1, 1, 2} 
+            };
+            byte[,] transposedState = new byte[4, 4];
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    transposedState[j, i] = state[i, j];
+                }
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    for(int k = 0; k < 4; k++)
+                    {
+                        int multRes=0;
+                        string binary;
+                        if (matrix[i,k]==3)
+                        {
+                            multRes = 2 * transposedState[k, j];
+                            binary = Convert.ToString(multRes, 2);
+                            if (binary.Length>8)
+                            {
+                                binary = binary.Substring(1);
+                                multRes = Convert.ToByte(binary, 2);
+                                multRes ^= 27; // XOR with 1B
+                            }
+                            multRes ^= transposedState[k, j];
+                        }
+                        else if (matrix[i, k] == 2)
+                        {
+                            multRes = matrix[i, k] * transposedState[k, j];
+                            binary = Convert.ToString(multRes, 2);
+                            if (binary.Length > 8)
+                            {
+                                binary = binary.Substring(1);
+                                multRes = Convert.ToByte(binary, 2);
+                                multRes ^= 27; 
+                            }
+                        }
+                        else if (matrix[i, k] == 1)
+                        {
+                            multRes = matrix[i, k] * transposedState[k, j];
+                        }
+
+                        newState[i,j]^= (byte)multRes;
+                    }  
+                }
+            }
+            return newState;
+        }
+
+
     }
 
 
