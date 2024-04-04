@@ -112,55 +112,49 @@ namespace SecurityLibrary.AES
                 plainBytes[i] = Convert.ToByte(plainText.Substring(2 * (i + 1), 2), 16);
             }
             byte[,] expandedKey = KeyExpansion(key);
+            string[,] keyNW = new string[4, 44];
+            keyNW=convertToHex(expandedKey);
             int counter = 0;
             for (int i = 0; i < 4; i++)
             {
                 for (int  j= 0; j < 4; j++)
                 {
-                    state[i, j]=plainBytes[counter] ;
+                    state[j, i]=plainBytes[counter] ;
                     counter++;
                 }
             }
             int round=0;
             byte[,] usedKeyPart = usedPartExpandedKey(expandedKey, round);
+            string[,] hexState = new string[4, 4];
+            hexState = convertToHex(state);
+            hexState = convertToHex(usedKeyPart);
             //initial Add Round Key
             state = AddRoundKey(state, usedKeyPart);
+            hexState = convertToHex(state);
             round++;
             //Repeat for 9 times
             for (; round < 10; round++)
             {
                 state = SubBytes(state, true);
-                byte[,] transposedState = new byte[4, 4];
-                for (int i = 0; i < 4; i++)
-                {
-                    for (int j = 0; j < 4; j++)
-                    {
-                        transposedState[j, i] = state[i, j];
-                    }
-                }
+                hexState = convertToHex(state);
                 //state = shiftrows
-                state = ShiftRows(transposedState);
-                string[,] mcState = new string[4, 4];
-                for (int i = 0; i < 4; i++)
-                {
-                    for (int j = 0; j < 4; j++)
-                    {
-                        mcState[i,j]= Convert.ToString(state[i,j], 16);
-                    }
-                }
-                
-
+                state = ShiftRows(state);
+                hexState = convertToHex(state);
                 //state = mixcols
                 state = MixColumns(state);
-
+                hexState=convertToHex(state);
                 //convert the mix column matrix to hex for testing
                 
+                
                 usedKeyPart = usedPartExpandedKey(expandedKey, round);
+                hexState=convertToHex(state) ;
                 state = AddRoundKey(state, usedKeyPart);
+                hexState = convertToHex(state);
             }
             //Last Round
             state = SubBytes(state, true);
             //state = shiftrows
+            state = ShiftRows(state);
             usedKeyPart = usedPartExpandedKey(expandedKey, round);
             state = AddRoundKey(state,usedKeyPart);
             return state.ToString();
@@ -186,10 +180,10 @@ namespace SecurityLibrary.AES
             // Copy original key into the first Nb columns of the expanded key
             for (int i = 0; i < Nk; i++)
             {
-                expandedKey[i, 0] = keyBytes[i * 4];
-                expandedKey[i, 1] = keyBytes[i * 4 + 1];
-                expandedKey[i, 2] = keyBytes[i * 4 + 2];
-                expandedKey[i, 3] = keyBytes[i * 4 + 3];
+                expandedKey[0, i] = keyBytes[i * 4];
+                expandedKey[1, i] = keyBytes[i * 4 + 1];
+                expandedKey[2, i] = keyBytes[i * 4 + 2];
+                expandedKey[3, i] = keyBytes[i * 4 + 3];
             }
 
             for (int col = Nk; col < (Nb * (Nr + 1)); col++)
@@ -408,6 +402,19 @@ namespace SecurityLibrary.AES
                 }
             }
             return newState;
+        }
+
+        public static string[,] convertToHex(byte[,] state)
+        {
+            string[,] hexState = new string[4, 4];
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    hexState[i, j] = Convert.ToString(state[i, j], 16);
+                }
+            }
+            return hexState;
         }
 
 
