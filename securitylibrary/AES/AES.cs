@@ -157,7 +157,21 @@ namespace SecurityLibrary.AES
             state = ShiftRows(state);
             usedKeyPart = usedPartExpandedKey(expandedKey, round);
             state = AddRoundKey(state,usedKeyPart);
-            return state.ToString();
+            hexState = convertToHex(state);
+
+            string cipher="0x";
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    if (hexState[j,i].ToString().Length==1)
+                    {
+                        cipher += "0";
+                    }
+                    cipher += hexState[j, i].ToString();
+                }
+            }
+            return cipher;
         }
 
 
