@@ -71,35 +71,61 @@ namespace SecurityLibrary.AES
                 cipherBytes[i] = Convert.ToByte(cipherText.Substring(2 * (i + 1), 2), 16);
             }
             byte[,] expandedKey = KeyExpansion(key);
+            string[,] keyNW = new string[4, 44];
+            keyNW = convertToHex(expandedKey);
             int counter = 0;
             for (int i = 0; i < 4; i++)
             {
                 for (int j = 0; j < 4; j++)
                 {
-                    state[i, j] = cipherBytes[counter];
+                    state[j, i] = cipherBytes[counter];
                     counter++;
                 }
             }
+            string[,] hexState = new string[4, 4];
             int round = 10;
             byte[,] usedKeyPart = usedPartExpandedKey(expandedKey, round);
+            hexState = convertToHex(state);
+            hexState = convertToHex(usedKeyPart);
             //initial addRoundKey
             state = AddRoundKey(state, usedKeyPart);
+            hexState = convertToHex(state);
             round--;
             //Repeating for 9 times
             for (; round > 0; round--)
             {
+                state = ShiftRows(state,false);
+                hexState = convertToHex(state);
                 //state = shiftrows
                 state = SubBytes(state, false);
+                hexState = convertToHex(state);
                 usedKeyPart = usedPartExpandedKey(expandedKey, round);
                 state = AddRoundKey(state, usedKeyPart);
+                hexState = convertToHex(state);
                 //state = mixcol
+                state = MixColumns(state, false);
+                hexState = convertToHex(state);
             }
             //Last round
             //state = shiftrows
+            state = ShiftRows(state,false);
             state = SubBytes(state, false);
             usedKeyPart = usedPartExpandedKey(expandedKey, round);
             state = AddRoundKey(state, usedKeyPart);
-            return state.ToString();
+            hexState = convertToHex(state);
+            string plain = "0x";
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    if (hexState[j, i].ToString().Length == 1)
+                    {
+                        plain += "0";
+                    }
+                    plain += hexState[j, i].ToString();
+                }
+            }
+            return plain;
         }
 
         public override string Encrypt(string plainText, string key)
@@ -138,10 +164,10 @@ namespace SecurityLibrary.AES
                 state = SubBytes(state, true);
                 hexState = convertToHex(state);
                 //state = shiftrows
-                state = ShiftRows(state);
+                state = ShiftRows(state,true);
                 hexState = convertToHex(state);
                 //state = mixcols
-                state = MixColumns(state);
+                state = MixColumns(state,true);
                 hexState=convertToHex(state);
                 //convert the mix column matrix to hex for testing
                 
@@ -154,7 +180,7 @@ namespace SecurityLibrary.AES
             //Last Round
             state = SubBytes(state, true);
             //state = shiftrows
-            state = ShiftRows(state);
+            state = ShiftRows(state, true);
             usedKeyPart = usedPartExpandedKey(expandedKey, round);
             state = AddRoundKey(state,usedKeyPart);
             hexState = convertToHex(state);
@@ -337,86 +363,143 @@ namespace SecurityLibrary.AES
             return updatedState;
         }
 
-        public static byte[,] ShiftRows(byte[,] state)
+        public static byte[,] ShiftRows(byte[,] state,bool flag)
         {
             byte[,] newState = new byte[4, 4];
-            for (int i = 0; i < 4; i++)
+            if (flag)
             {
-                for (int j = 0; j < 4; j++)
+                for (int i = 0; i < 4; i++)
                 {
-                    if (i==0)
+                    for (int j = 0; j < 4; j++)
                     {
-                        newState[i, j] = state[i, j];
+                        if (i == 0)
+                        {
+                            newState[i, j] = state[i, j];
+                        }
+                        else if (i == 1)
+                        {
+                            newState[i, j] = state[i, (j + 1) % 4];
+                        }
+                        else if (i == 2)
+                        {
+                            newState[i, j] = state[i, (j + 2) % 4];
+                        }
+                        else if (i == 3)
+                        {
+                            newState[i, j] = state[i, (j + 3) % 4];
+                        }
                     }
-                    else if (i==1)
+                }
+            }
+            else
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 3; j >= 0; j--)
                     {
-                        newState[i, j] = state[i, (j + 1) % 4];
-                    }
-                    else if (i == 2)
-                    {
-                        newState[i, j] = state[i, (j + 2) % 4];
-                    }
-                    else if (i == 3)
-                    {
-                        newState[i, j] = state[i, (j + 3) % 4];
+                        if (i == 0)
+                        {
+                            newState[i, j] = state[i, j];
+                        }
+                        else if (i == 1)
+                        {
+                            newState[i, j] = state[i, (j + 3) % 4];
+                        }
+                        else if (i == 2)
+                        {
+                            newState[i, j] = state[i, (j + 2) % 4];
+                        }
+                        else if (i == 3)
+                        {
+                            newState[i, j] = state[i, (j + 1) % 4];
+                        }
                     }
                 }
             }
             return newState;
         }
-        public static byte[,] MixColumns(byte[,] state)
+        public static byte[,] MixColumns(byte[,] state,bool flag)
         {
             byte[,] newState = new byte[4, 4];
-            byte[,] matrix = new byte[4, 4]
+            byte[,] forwardMatrix = new byte[4, 4]
             {
-                { 2, 3, 1, 1}, 
+                { 2, 3, 1, 1},
                 { 1, 2, 3, 1},
                 { 1, 1, 2, 3},
-                { 3, 1, 1, 2} 
+                { 3, 1, 1, 2}
             };
-            
-            for (int i = 0; i < 4; i++)
-            {
-                for (int j = 0; j < 4; j++)
-                {
-                    for(int k = 0; k < 4; k++)
-                    {
-                        int multRes=0;
-                        string binary;
-                        if (matrix[i,k]==3)
-                        {
-                            multRes = 2 * state[k, j];
-                            binary = Convert.ToString(multRes, 2);
-                            if (binary.Length>8)
-                            {
-                                binary = binary.Substring(1);
-                                multRes = Convert.ToByte(binary, 2);
-                                multRes ^= 27; // XOR with 1B
-                            }
-                            multRes ^= state[k, j];
-                        }
-                        else if (matrix[i, k] == 2)
-                        {
-                            multRes = matrix[i, k] * state[k, j];
-                            binary = Convert.ToString(multRes, 2);
-                            if (binary.Length > 8)
-                            {
-                                binary = binary.Substring(1);
-                                multRes = Convert.ToByte(binary, 2);
-                                multRes ^= 27; 
-                            }
-                        }
-                        else if (matrix[i, k] == 1)
-                        {
-                            multRes = matrix[i, k] * state[k, j];
-                        }
 
-                        newState[i,j]^= (byte)multRes;
-                    }  
+            byte[,] inverseMatrix = new byte[4, 4]
+            {
+                {14,11,13,9},
+                {9,14,11,13},
+                {13,9,14,11},
+                {11,13,9,14}
+            };
+
+            if (flag)
+            {
+
+
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
+                        for (int k = 0; k < 4; k++)
+                        {
+                            int multRes = 0;
+                            string binary;
+                            if (forwardMatrix[i, k] == 3)
+                            {
+                                multRes = 2 * state[k, j];
+                                binary = Convert.ToString(multRes, 2);
+                                if (binary.Length > 8)
+                                {
+                                    binary = binary.Substring(1);
+                                    multRes = Convert.ToByte(binary, 2);
+                                    multRes ^= 27; // XOR with 1B
+                                }
+                                multRes ^= state[k, j];
+                            }
+                            else if (forwardMatrix[i, k] == 2)
+                            {
+                                multRes = forwardMatrix[i, k] * state[k, j];
+                                binary = Convert.ToString(multRes, 2);
+                                if (binary.Length > 8)
+                                {
+                                    binary = binary.Substring(1);
+                                    multRes = Convert.ToByte(binary, 2);
+                                    multRes ^= 27;
+                                }
+                            }
+                            else if (forwardMatrix[i, k] == 1)
+                            {
+                                multRes = forwardMatrix[i, k] * state[k, j];
+                            }
+                            newState[i, j] ^= (byte)multRes;
+                        }
+                    }
                 }
             }
+            else 
+            {
+
+                for (int i = 0; i < 4; i++)
+                {
+                    for (int j = 0; j < 4; j++)
+                    {
+                        for (int k = 0; k < 4; k++)
+                        {
+                            byte mulres = Multiply(state[k, j], inverseMatrix[i, k]);
+                            newState[i, j] ^= mulres;
+                        }
+                    }
+                }
+            }
+
             return newState;
         }
+
 
         public static string[,] convertToHex(byte[,] state)
         {
@@ -430,7 +513,29 @@ namespace SecurityLibrary.AES
             }
             return hexState;
         }
+        static byte Multiply(byte a, byte b)
+        {
+            byte result = 0;
+            byte lsb = 0x01;
+            byte msb = 0x80;
 
+            for (int i = 0; i < 8; i++)
+            {
+                if ((b & lsb) != 0)
+                {
+                    result ^= a;
+                }
+                bool high_set = (a & msb) != 0;
+                a *= 2;
+                if (high_set)
+                {
+                    a ^= 0x1B;
+                } 
+                b /= 2;
+            }
+
+            return result;
+        }
 
     }
 
