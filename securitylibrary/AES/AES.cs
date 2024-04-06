@@ -211,7 +211,6 @@ namespace SecurityLibrary.AES
             }
 
             int Nk = keyBytes.Length / 4; 
-           
             int Nr = Nk + 6; 
             int expandedKeySize = 4 * 4 * (Nr + 1);
             byte[,] expandedKey = new byte[4, 4 * (Nr + 1)];
