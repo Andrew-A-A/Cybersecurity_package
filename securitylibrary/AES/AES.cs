@@ -13,7 +13,7 @@ namespace SecurityLibrary.AES
     /// </summary>
     public class AES : CryptographicTechnique
     {
-        // AES S-box
+    
         private static readonly byte[] Sbox = new byte[]
         {
         0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -34,7 +34,7 @@ namespace SecurityLibrary.AES
         0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
         };
 
-        //AES Inverse S-box
+       
         private static readonly byte[] InverseSbox = new byte[]
         {
             0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
@@ -55,7 +55,7 @@ namespace SecurityLibrary.AES
             0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
         };
 
-        // Rcon values for key schedule
+        
         private static readonly byte[] Rcon = new byte[]
         {
         0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
@@ -203,21 +203,20 @@ namespace SecurityLibrary.AES
 
         public static byte[,] KeyExpansion(string originalKey)
         {
-            // Remove "0x" prefix and convert hex string to byte array
+           
             byte[] keyBytes = new byte[originalKey.Length / 2 - 1];
             for (int i = 0; i < keyBytes.Length; i++)
             {
                 keyBytes[i] = Convert.ToByte(originalKey.Substring(2 * (i + 1), 2), 16);
             }
 
-            int Nk = keyBytes.Length / 4; // Number of 32-bit words in the key
-            int Nb = 4; // Number of columns in state (always 4 for AES)
-            int Nr = Nk + 6; // Number of rounds
-            int expandedKeySize = 4 * Nb * (Nr + 1); // Size of expanded key in bytes
+            int Nk = keyBytes.Length / 4; 
+           
+            int Nr = Nk + 6; 
+            int expandedKeySize = 4 * 4 * (Nr + 1);
+            byte[,] expandedKey = new byte[4, 4 * (Nr + 1)];
 
-            byte[,] expandedKey = new byte[Nb, Nb * (Nr + 1)]; // Expanded key
-
-            // Copy original key into the first Nb columns of the expanded key
+            
             for (int i = 0; i < Nk; i++)
             {
                 expandedKey[0, i] = keyBytes[i * 4];
@@ -226,17 +225,17 @@ namespace SecurityLibrary.AES
                 expandedKey[3, i] = keyBytes[i * 4 + 3];
             }
 
-            for (int col = Nk; col < (Nb * (Nr + 1)); col++)
+            for (int col = Nk; col < (4 * (Nr + 1)); col++)
             {
                 byte[] temp = new byte[4];
 
-                // Copy the previous column into temp
+               
                 for (int row = 0; row < 4; row++)
                 {
                     temp[row] = expandedKey[row, col - 1];
                 }
 
-                // Perform key schedule core
+             
                 if (col % Nk == 0)
                 {
                     // RotWord
@@ -274,21 +273,7 @@ namespace SecurityLibrary.AES
             return expandedKey;
         }
 
-        // Helper method to print the expanded key
-        public static void PrintExpandedKey(byte[,] expandedKey)
-        {
-            int columns = expandedKey.GetLength(1);
-            int rows = expandedKey.GetLength(0);
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < columns; j++)
-                {
-                    Console.Write($"{expandedKey[i, j]:X2} ");
-                }
-                Console.WriteLine();
-            }
-        }
+     
 
         //determine which part of the expanded key will be used in the round
         public static byte[,] usedPartExpandedKey(byte[,] expandedKey,int index)
