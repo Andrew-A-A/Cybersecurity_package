@@ -11,6 +11,7 @@ namespace SecurityLibrary
         public int Analyse(string plainText, string cipherText)
         {
             // throw new NotImplementedException();
+
             cipherText = cipherText.ToLower();
             plainText = plainText.ToLower();
             string pt = "";
